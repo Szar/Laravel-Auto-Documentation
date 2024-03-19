@@ -19,10 +19,17 @@
     },
     "autoload": {
         "psr-4": {
-            "Seacoastbank\\AutoDocumentation\\": "src"
+            "Seacoastbank\\AutoDocumentation\\": "src/"
         },
         "exclude-from-classmap": [
             "src/Tests/"
         ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Seacoastbank\\AutoDocumentation\\AutoDocumentationServiceProvider"
+            ]
+        }
     }
 }
