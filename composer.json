@@ -1,28 +1,25 @@
 {
-    "name": "seacoastbank/auto-documentation",
-    "description": "Auto documentation for laravel",
-    "keywords": [
-        "laravel",
-        "auto-documentation"
-    ],
-    "homepage": "https://github.com/SeacoastBank/Laravel-Auto-Documentation",
-    "license": "MIT",
-    "authors": [
+    "name": "seacoastbank/autodocumentation",
+    "repositories": [
         {
-            "name": "SeacoastBank"
+            "type": "git",
+            "url": "https://github.com/Szar/phpdoc-to-rst.git"
         }
     ],
-    "require": {
-        "php": "^7.2.5 | ^8.0",
-        "laravel/framework": ">=5.3.0",
-        "minime/annotations": "2.3.1"
-    },
     "autoload": {
         "psr-4": {
-            "Seacoastbank\\AutoDocumentation\\": "src"
-        },
-        "exclude-from-classmap": [
-            "src/Tests/"
-        ]
+            "Seacoastbank\\Autodocumentation\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Seacoastbank"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "phpdocumentor/reflection": "4.x-dev",
+        "phpdocumentor/reflection-common": "^2.2",
+        "symfony/console": "5.4.x-dev"
     }
 }
