@@ -17,6 +17,7 @@
     "require": {
         "nikic/php-parser": "4.x-dev",
         "phpdocumentor/reflection": "5.3.3",
-        "phpdocumentor/reflection-common": "2.2"
+        "phpdocumentor/reflection-common": "2.2",
+        "mpociot/reflection-docblock": "^2.0@dev"
     }
 }

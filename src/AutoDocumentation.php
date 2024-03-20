@@ -3,8 +3,8 @@
 namespace SeacoastBank\AutoDocumentation;
 
 use Illuminate\Support\Facades\Route;
-//use ReflectionClass;
-//use ReflectionMethod;
+use ReflectionClass;
+use ReflectionMethod;
 //use SeacoastBank\AutoDocumentation\Lib\DocumentationConfig;
 //use SeacoastBank\AutoDocumentation\Lib\Utils;
 use phpDocumentor\Reflection\DocBlockFactory;
@@ -14,6 +14,8 @@ use phpDocumentor\Reflection\Php\NodesFactory;
 use phpDocumentor\Reflection\Php\Project;
 use phpDocumentor\Reflection\Php\ProjectFactory;
 use phpDocumentor\Reflection\Php\Factory;
+use SeacoastBank\AutoDocumentation\Lib\ClassFileBuilder;
+use SeacoastBank\AutoDocumentation\Lib\InterfaceFileBuilder;
 //use SeacoastBank\PHPDocToRst\Builder\MainIndexBuilder;
 //use SeacoastBank\PHPDocToRst\Builder\NamespaceIndexBuilder;
 //use SeacoastBank\PHPDocToRst\Extension\Extension;
@@ -81,8 +83,72 @@ class AutoDocumentation {
             ],
         ];*/
     }
-    private function getReflections() {
 
+    public function generate()
+    {
+        $response = [];
+        //$this->setupReflection();
+        //$this->createDirectoryStructure();
+
+        //$builder = new ClassFileBuilder($file, $class, $this->extensions);
+
+
+
+
+        //$this->parseFiles();
+        //$this->buildIndexes();
+        //$this->autodoc = new AutoDocumentation;
+
+        foreach (Route::getRoutes() as $route) {
+            if($route->getActionName() !== 'Closure' && (strpos($route->uri, "api") !== false || $route->action["prefix"]==="api"  || (array_key_exists("middleware", $route->action) && in_array("api", $route->action["middleware"])))) {
+                $controllerName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][0] : explode('@', $route->action['uses']))[0] : null;
+                $methodName =  !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][1] : explode('@', $route->action['uses']))[1] : null;
+
+                $route->name = $route->getName();
+                $route->controller =  new ReflectionClass($controllerName);
+                $route->method = $route->controller->getMethod($methodName);
+                //$route->file = new LocalFile($file->getPathname());
+
+                $comment = $route->controller->getDocComment();
+                //$factory  = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
+                //$docblock = $factory->create($comment);
+
+                var_dump($comment);
+                $response[] = $route;
+
+                //$builder = new InterfaceFileBuilder($file, $interface, $this->extensions);
+                //$builder->getContent();
+            }
+
+
+            /*;
+            $projectFactory = new ProjectFactory([
+                new Factory\Argument(new PrettyPrinter()),
+                new Factory\Class_(),
+                new Factory\Constant(new PrettyPrinter()),
+                new Factory\DocBlock(DocBlockFactory::createInstance()),
+                new Factory\File(NodesFactory::createInstance(),
+                    [
+                        new ErrorHandlingMiddleware($this)
+                    ]),
+                new Factory\Function_(),
+                new Factory\Interface_(),
+                new Factory\Method(),
+                new Factory\Property(new PrettyPrinter()),
+                new Factory\Trait_(),
+            ]);
+            $this->project = $projectFactory->create('MyProject', $interfaceList);
+            $this->log('Successfully parsed files.');
+            $reflections = $this->getReflections();
+            // $file = new LocalFile('test.php');
+
+            var_dump( $this->extensions);*/
+
+
+        }
+        return $response;
+    }
+    private function getReflections() {
         $interfaceList = [];
         $this->log('Start parsing files.');
         foreach ([app_path()] as $srcDir) {
@@ -100,6 +166,8 @@ class AutoDocumentation {
                 }
             }
         }
+        echo "<br><br><br>";
+        var_dump($interfaceList);
 
         $projectFactory = new ProjectFactory([
             new Factory\Argument(new PrettyPrinter()),
@@ -132,26 +200,14 @@ class AutoDocumentation {
     private function log($message) {
         Log::debug($message);
     }
-    public function generate() {
-        //$this->setupReflection();
-        //$this->createDirectoryStructure();
-        //$this->parseFiles();
-        //$this->buildIndexes();
-        //$this->autodoc = new AutoDocumentation;
 
-        $reflections = $this->getReflections();
-       // $file = new LocalFile('test.php');
-
-        var_dump( $this->extensions);
-
-
-    }
 
     public static function getRouteClassAndMethod($action)
     {
-        if ($action['uses'] !== null) {
+
+        if ($action['uses'] !== null ) {
             if (is_array($action['uses'])) {
-                return $action['uses'];
+                return ;
             } elseif (is_string($action['uses'])) {
                 return explode('@', $action['uses']);
             }
@@ -164,7 +220,6 @@ class AutoDocumentation {
         }
     }
     private function getMappedRoutes() {
-        //$controller = $this->request->route()->getActionName();
         $routes = [
             'api' => [],
             'web' => []
