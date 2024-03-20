@@ -3,21 +3,58 @@
 namespace SeacoastBank\AutoDocumentation;
 
 use Illuminate\Support\Facades\Route;
-use mysql_xdevapi\Exception;
 //use ReflectionClass;
 //use ReflectionMethod;
 //use SeacoastBank\AutoDocumentation\Lib\DocumentationConfig;
 //use SeacoastBank\AutoDocumentation\Lib\Utils;
-use SeacoastBank\PHPDocToRst\ApiDocBuilder;
+use phpDocumentor\Reflection\DocBlockFactory;
+use phpDocumentor\Reflection\File\LocalFile;
+use phpDocumentor\Reflection\Php\Namespace_;
+use phpDocumentor\Reflection\Php\NodesFactory;
+use phpDocumentor\Reflection\Php\Project;
+use phpDocumentor\Reflection\Php\ProjectFactory;
+use phpDocumentor\Reflection\Php\Factory;
+//use SeacoastBank\PHPDocToRst\Builder\MainIndexBuilder;
+//use SeacoastBank\PHPDocToRst\Builder\NamespaceIndexBuilder;
+//use SeacoastBank\PHPDocToRst\Extension\Extension;
+//use SeacoastBank\PHPDocToRst\Builder\ClassFileBuilder;
+//use SeacoastBank\PHPDocToRst\Builder\InterfaceFileBuilder;
+//use phpDocumentor\Reflection\PrettyPrinter;
+use Illuminate\Support\Facades\Log;
+use PhpParser\PrettyPrinter\Standard as PrettyPrinter;
 
 
 class AutoDocumentation {
-    private $config;
+    /** @var Project */
+    private $project;
+
+    /** @var array */
+    private $docFiles = [];
+
+    /** @var array */
+    private $constants = [];
+
+    /** @var array */
+    private $functions = [];
+
+    /** @var Extension[] */
+    private $extensions;
+
+    /** @var string[] */
+    private $extensionNames = [];
+
+    /** @var [][] */
+    private $extensionArguments = [];
+
+    /** @var bool */
+    private $verboseOutput = false;
+
+    /** @var bool */
+    private $debugOutput = false;
+
+
     function __construct($config = null) {
-        var_dump(app_path());
-        echo "<br>";
-        var_dump(base_path());
-        $this->docBuilder = new ApiDocBuilder(app_path(), base_path().'/doctest');
+        //$this->docBuilder = new ApiDocBuilder(app_path(), base_path().'/doctest');
         /*$this->config = $config ?: new DocumentationConfig(config('apidocumentation'));
         $this->strategies = [
             'metadata' => [
@@ -44,12 +81,70 @@ class AutoDocumentation {
             ],
         ];*/
     }
-    public function generate() {
-        //$this->autodoc = new AutoDocumentation;
-        return "Test";
-        //$response = Http::get('https://inspiration.goprogram.ai/');
+    private function getReflections() {
 
-        //return $response['quote'] . ' -' . $response['author'];
+        $interfaceList = [];
+        $this->log('Start parsing files.');
+        foreach ([app_path()] as $srcDir) {
+            $dir = new \RecursiveDirectoryIterator($srcDir);
+            $files = new \RecursiveIteratorIterator($dir);
+
+            foreach ($files as $file) {
+                if ($file->isDir()) {
+                    continue;
+                }
+                try {
+                    $interfaceList[] = new LocalFile($file->getPathname());
+                } catch (\Exception $e) {
+                    $this->log('Failed to load ' . $file->getPathname() . PHP_EOL);
+                }
+            }
+        }
+
+        $projectFactory = new ProjectFactory([
+            new Factory\Argument(new PrettyPrinter()),
+            new Factory\Class_(),
+            new Factory\Constant(new PrettyPrinter()),
+            new Factory\DocBlock(DocBlockFactory::createInstance()),
+            new Factory\File(NodesFactory::createInstance(),
+                [
+                    new ErrorHandlingMiddleware($this)
+                ]),
+            new Factory\Function_(),
+            new Factory\Interface_(),
+            new Factory\Method(),
+            new Factory\Property(new PrettyPrinter()),
+            new Factory\Trait_(),
+        ]);
+        $this->project = $projectFactory->create('MyProject', $interfaceList);
+        $this->log('Successfully parsed files.');
+
+        // load extensions
+        foreach ($this->extensionNames as $extensionName) {
+            $extension = new $extensionName($this->project, $this->extensionArguments[$extensionName]);
+            if (!is_subclass_of($extension, Extension::class)) {
+                $this->log('Failed to load extension ' . $extensionName . '.');
+            }
+            $this->extensions[] = $extension;
+            $this->log('Extension ' . $extensionName . ' loaded.');
+        }
+    }
+    private function log($message) {
+        Log::debug($message);
+    }
+    public function generate() {
+        //$this->setupReflection();
+        //$this->createDirectoryStructure();
+        //$this->parseFiles();
+        //$this->buildIndexes();
+        //$this->autodoc = new AutoDocumentation;
+
+        $reflections = $this->getReflections();
+       // $file = new LocalFile('test.php');
+
+        var_dump( $this->extensions);
+
+
     }
 
     public static function getRouteClassAndMethod($action)

@@ -1,12 +1,9 @@
 {
     "name": "seacoastbank/autodocumentation",
-    "repositories": [
-        {
-            "type": "git",
-            "url": "https://github.com/Szar/phpdoc-to-rst.git"
-        }
-    ],
     "autoload": {
+        "classmap": [
+            "src/"
+        ],
         "psr-4": {
             "Seacoastbank\\Autodocumentation\\": "src/"
         }
@@ -18,8 +15,8 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "phpdocumentor/reflection": "4.x-dev",
-        "phpdocumentor/reflection-common": "^2.2",
-        "symfony/console": "5.4.x-dev"
+        "nikic/php-parser": "4.x-dev",
+        "phpdocumentor/reflection": "5.3.3",
+        "phpdocumentor/reflection-common": "2.2"
     }
 }
