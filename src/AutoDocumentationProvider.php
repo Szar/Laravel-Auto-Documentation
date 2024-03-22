@@ -3,7 +3,7 @@
 namespace SeacoastBank\AutoDocumentation;
 
 use Illuminate\Support\ServiceProvider;
-//use SeacoastBank\AutoDocumentation\Commands\Generate;
+use SeacoastBank\AutoDocumentation\Commands\Generate;
 
 class AutoDocumentationProvider extends ServiceProvider
 {
@@ -43,6 +43,12 @@ class AutoDocumentationProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/config' => config_path('vendor/seacoastbank/autodocumentation'),
         ]);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                Generate::class
+            ]);
+        }
 
         //$kernel = $this->app['Illuminate\Contracts\Http\Kernel'];
         //$kernel->pushMiddleware('Yk\LaravelPackageExample\App\Http\Middleware\MiddlewareExample');

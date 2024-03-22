@@ -3,59 +3,43 @@
 namespace SeacoastBank\AutoDocumentation;
 
 use Illuminate\Support\Facades\Route;
-use ReflectionClass;
-use ReflectionMethod;
 //use SeacoastBank\AutoDocumentation\Lib\DocumentationConfig;
 //use SeacoastBank\AutoDocumentation\Lib\Utils;
-use phpDocumentor\Reflection\DocBlockFactory;
-use phpDocumentor\Reflection\File\LocalFile;
-use phpDocumentor\Reflection\Php\Namespace_;
-use phpDocumentor\Reflection\Php\NodesFactory;
-use phpDocumentor\Reflection\Php\Project;
-use phpDocumentor\Reflection\Php\ProjectFactory;
-use phpDocumentor\Reflection\Php\Factory;
-use SeacoastBank\AutoDocumentation\Lib\ClassFileBuilder;
-use SeacoastBank\AutoDocumentation\Lib\InterfaceFileBuilder;
+//use phpDocumentor\Reflection\DocBlockFactory;
+//use phpDocumentor\Reflection\File\LocalFile;
+//use phpDocumentor\Reflection\Php\Namespace_;
+//use phpDocumentor\Reflection\Php\NodesFactory;
+//use phpDocumentor\Reflection\Php\Project;
+//use phpDocumentor\Reflection\Php\ProjectFactory;
+//use phpDocumentor\Reflection\Php\Factory;
+//use SeacoastBank\AutoDocumentation\Lib\ClassFileBuilder;
+//use SeacoastBank\AutoDocumentation\Lib\InterfaceFileBuilder;
 //use SeacoastBank\PHPDocToRst\Builder\MainIndexBuilder;
 //use SeacoastBank\PHPDocToRst\Builder\NamespaceIndexBuilder;
 //use SeacoastBank\PHPDocToRst\Extension\Extension;
 //use SeacoastBank\PHPDocToRst\Builder\ClassFileBuilder;
 //use SeacoastBank\PHPDocToRst\Builder\InterfaceFileBuilder;
 //use phpDocumentor\Reflection\PrettyPrinter;
+//use PhpParser\PrettyPrinter\Standard as PrettyPrinter;
+use ReflectionClass;
+use ReflectionMethod;
 use Illuminate\Support\Facades\Log;
-use PhpParser\PrettyPrinter\Standard as PrettyPrinter;
-
+use Jasny\PhpdocParser\PhpdocParser as DocParser;
+use Jasny\PhpdocParser\Set\PhpDocumentor;
+use SeacoastBank\AutoDocumentation\Builder\Builder;
+use SeacoastBank\AutoDocumentation\Parser\Parser;
 
 class AutoDocumentation {
-    /** @var Project */
-    private $project;
 
-    /** @var array */
-    private $docFiles = [];
-
-    /** @var array */
-    private $constants = [];
-
-    /** @var array */
-    private $functions = [];
-
-    /** @var Extension[] */
-    private $extensions;
-
-    /** @var string[] */
-    private $extensionNames = [];
-
-    /** @var [][] */
-    private $extensionArguments = [];
-
-    /** @var bool */
-    private $verboseOutput = false;
-
-    /** @var bool */
-    private $debugOutput = false;
-
+    private $builder;
+    private $parser;
 
     function __construct($config = null) {
+
+        $this->parser = new \SeacoastBank\AutoDocumentation\Parser\Parser();
+        $this->builder = new \SeacoastBank\AutoDocumentation\Builder\Builder();
+
+
         //$this->docBuilder = new ApiDocBuilder(app_path(), base_path().'/doctest');
         /*$this->config = $config ?: new DocumentationConfig(config('apidocumentation'));
         $this->strategies = [
@@ -83,45 +67,41 @@ class AutoDocumentation {
             ],
         ];*/
     }
-
-    public function generate()
-    {
+    public function fetchRoutes() {
         $response = [];
-        //$this->setupReflection();
-        //$this->createDirectoryStructure();
-
-        //$builder = new ClassFileBuilder($file, $class, $this->extensions);
-
-
-
-
-        //$this->parseFiles();
-        //$this->buildIndexes();
-        //$this->autodoc = new AutoDocumentation;
-
+        $parser = new DocParser(PhpDocumentor::tags());
         foreach (Route::getRoutes() as $route) {
-            if($route->getActionName() !== 'Closure' && (strpos($route->uri, "api") !== false || $route->action["prefix"]==="api"  || (array_key_exists("middleware", $route->action) && in_array("api", $route->action["middleware"])))) {
+            if ($route->getActionName() !== 'Closure' && (strpos($route->uri, "api") !== false || $route->action["prefix"] === "api" || (array_key_exists("middleware", $route->action) && in_array("api", $route->action["middleware"])))) {
                 $controllerName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][0] : explode('@', $route->action['uses']))[0] : null;
-                $methodName =  !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][1] : explode('@', $route->action['uses']))[1] : null;
+                $methodName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][1] : explode('@', $route->action['uses']))[1] : null;
 
                 $route->name = $route->getName();
-                $route->controller =  new ReflectionClass($controllerName);
+                $route->controller = new ReflectionClass($controllerName);
                 $route->method = $route->controller->getMethod($methodName);
-                //$route->file = new LocalFile($file->getPathname());
 
-                $comment = $route->controller->getDocComment();
+                $route->controller->docComments = $parser->parse($route->controller->getDocComment());
+                $route->method->docComments = $parser->parse($route->method->getDocComment());
+
+                preg_match_all("/{[^}]*}/", $route->uri, $uri_parameters);
+                $route->uri_parameters = $uri_parameters;
+
+                $route->comments = $this->parser->parse($route->method);
+
+               // $cloningTraverser = new NodeTraverser([new CloningVisitor()]);
+                //[$newPhpDocNode] = $cloningTraverser->traverse([$phpDocNode]);
+                //$newPhpDocNode->getParamTagValues()[0]->type = new IdentifierTypeNode('Ipsum');
+
+
+                
                 //$factory  = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
                 //$docblock = $factory->create($comment);
 
-                var_dump($comment);
+
                 $response[] = $route;
 
                 //$builder = new InterfaceFileBuilder($file, $interface, $this->extensions);
                 //$builder->getContent();
-            }
-
-
-            /*;
+                /*;
             $projectFactory = new ProjectFactory([
                 new Factory\Argument(new PrettyPrinter()),
                 new Factory\Class_(),
@@ -143,9 +123,97 @@ class AutoDocumentation {
             // $file = new LocalFile('test.php');
 
             var_dump( $this->extensions);*/
-
-
+            }
         }
+        return $response;
+
+    }
+
+    public function generate() {
+
+        $data = [
+            'title' => 'API Reference Test Page',
+            'description' => 'This is a test page!',
+            'content' => [
+                [
+                    'title' => 'Empty Test Section',
+                    'description' => 'This is a test section!',
+                ],
+                [
+                    'title' => 'Reference Test Section',
+                    'description' => 'This is a test section!',
+                    'content' => [
+                        [
+                            'title' => 'Empty Endpoint',
+                            'description' => 'This is a test endpoint!',
+                            'method' => 'GET',
+                            'uri' => '/api/am/empty',
+                            'parameters' => []
+                        ],
+                        [
+                            'title' => 'Test Endpoint',
+                            'description' => 'This is a test endpoint!',
+                            'method' => 'POST',
+                            'uri' => '/api/test/{user_id}/save',
+                            'example_response' => '{ "hello" : "world" }',
+                            'parameters' => [
+                                [
+                                    'resource' => 'param',
+                                    'name' => 'user_id',
+                                    'description' => 'This is testing uri params.',
+                                ],
+                                [
+                                    'resource' => 'query',
+                                    'type' => 'bool',
+                                    'name' => 'is_new',
+                                    'description' => 'This is testing get params.',
+                                ],
+                                [
+                                    'resource' => 'form',
+                                    'type' => 'string',
+                                    'name' => 'name',
+                                    'description' => 'This is testing form params.',
+                                ],
+                                [
+                                    'resource' => 'form',
+                                    'type' => 'string',
+                                    'name' => 'name',
+                                    'description' => 'This is testing form params.',
+                                    'optional' => true,
+                                ],
+                                [
+                                    'resource' => 'reqheader',
+                                    'name' => 'Authorization',
+                                    'description' => 'This is testing request headers param.'
+                                ],
+                                [
+                                    'resource' => 'reqheader',
+                                    'name' => 'Content-Type',
+                                    'description' => 'This is testing request headers param.'
+                                ],
+                                [
+                                    'resource' => 'resheader',
+                                    'name' => 'Content-Type',
+                                    'description' => 'This is testing response headers param.'
+                                ],
+                            ]],
+                ]
+                ]
+            ]
+        ];
+
+
+
+
+
+        /*$response = $this->builder->build($data);
+        $doc_file = fopen(base_path()."/docs/api.rst", "w") or die("Unable to open file!");
+        fwrite($doc_file, $response);
+        fclose($doc_file);*/
+
+
+        $response = $this->fetchRoutes();
+
         return $response;
     }
     private function getReflections() {
