@@ -23,9 +23,9 @@ use Illuminate\Support\Facades\Route;
 //use PhpParser\PrettyPrinter\Standard as PrettyPrinter;
 use ReflectionClass;
 use ReflectionMethod;
-use Illuminate\Support\Facades\Log;
-use Jasny\PhpdocParser\PhpdocParser as DocParser;
-use Jasny\PhpdocParser\Set\PhpDocumentor;
+//use Illuminate\Support\Facades\Log;
+//use Jasny\PhpdocParser\PhpdocParser as DocParser;
+//use Jasny\PhpdocParser\Set\PhpDocumentor;
 use SeacoastBank\AutoDocumentation\Builder\Builder;
 use SeacoastBank\AutoDocumentation\Parser\Parser;
 
@@ -69,23 +69,25 @@ class AutoDocumentation {
     }
     public function fetchRoutes() {
         $response = [];
-        $parser = new DocParser(PhpDocumentor::tags());
+        //$parser = new DocParser(PhpDocumentor::tags());
         foreach (Route::getRoutes() as $route) {
             if ($route->getActionName() !== 'Closure' && (strpos($route->uri, "api") !== false || $route->action["prefix"] === "api" || (array_key_exists("middleware", $route->action) && in_array("api", $route->action["middleware"])))) {
                 $controllerName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][0] : explode('@', $route->action['uses']))[0] : null;
                 $methodName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][1] : explode('@', $route->action['uses']))[1] : null;
 
-                $route->name = $route->getName();
-                $route->controller = new ReflectionClass($controllerName);
+                $route->controller = new \ReflectionClass($controllerName);
                 $route->method = $route->controller->getMethod($methodName);
 
-                $route->controller->docComments = $parser->parse($route->controller->getDocComment());
-                $route->method->docComments = $parser->parse($route->method->getDocComment());
+
+                //$reflectionClass = new \ReflectionClass($class->getName());
+                //        $reflectionMethod = $reflectionClass->getMethod($method->getName());
+                //$route->controller->docComments = $parser->parse($route->controller->getDocComment());
+                //$route->method->docComments = $parser->parse($route->method->getDocComment());
 
                 preg_match_all("/{[^}]*}/", $route->uri, $uri_parameters);
                 $route->uri_parameters = $uri_parameters;
 
-                $route->comments = $this->parser->parse($route->method);
+                //$route->comments = $this->parser->parse($route->method);
 
                // $cloningTraverser = new NodeTraverser([new CloningVisitor()]);
                 //[$newPhpDocNode] = $cloningTraverser->traverse([$phpDocNode]);
@@ -96,8 +98,12 @@ class AutoDocumentation {
                 //$factory  = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
                 //$docblock = $factory->create($comment);
 
-
-                $response[] = $route;
+                $class = $route->controller;
+                $method = $route->method;
+                $response[] = [
+                    'name' =>  $route->getName(),
+                    'comments' => $this->parser->parse($route->controller, $route->method)
+                ];
 
                 //$builder = new InterfaceFileBuilder($file, $interface, $this->extensions);
                 //$builder->getContent();

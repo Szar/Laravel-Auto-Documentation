@@ -15,11 +15,11 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "nikic/php-parser": "4.x-dev",
-        "phpdocumentor/reflection": "5.3.3",
-        "phpdocumentor/reflection-common": "2.2",
-        "mpociot/reflection-docblock": "^2.0@dev",
-        "jasny/phpdoc-parser": "dev-master",
-        "phpstan/phpdoc-parser": "^1.27"
+        "phpstan/phpdoc-parser": "^1.27",
+        "symfony/symfony": "^6.4.5",
+        "phpdocumentor/reflection-docblock": "^5.2"
+    },
+    "config": {
+        "platform-check": false
     }
 }

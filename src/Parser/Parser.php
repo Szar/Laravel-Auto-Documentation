@@ -13,14 +13,67 @@ use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
-
+use Symfony\Component\PropertyInfo\PhpStan\NameScopeFactory;
+use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
+use Symfony\Component\PropertyInfo\Type;
+//use Symfony\Component\PropertyInfo\Util\PhpStanTypeHelper;
+use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
+use Symfony\Component\PropertyInfo\Extractor\PhpStanExtractor;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
+//use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
+//use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
+use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
+use phpDocumentor\Reflection\DocBlock;
+use phpDocumentor\Reflection\DocBlock\Tags\InvalidTag;
+use phpDocumentor\Reflection\DocBlockFactory;
+use phpDocumentor\Reflection\DocBlockFactoryInterface;
+use phpDocumentor\Reflection\Types\Context;
+use phpDocumentor\Reflection\Types\ContextFactory;
+use Symfony\Component\PropertyInfo\Util\PhpDocTypeHelper;
 
 class Parser {
+    //private $phpStanTypeHelper;
+    //private $typeParser;
+    //private $nameScopeFactory;
+    //private nameScopeFactory;
+    //private Lexer $lexer;
+
     function __construct() {
         $this->lexer = new Lexer();
+        //$this->lexer->TOKEN_LABELS[] = XXX;
         $this->constExprParser = new ConstExprParser();
         $this->typeParser = new TypeParser($this->constExprParser);
         $this->parser = new PhpDocParser($this->typeParser, $this->constExprParser);
+        //$this->phpDocExtractor = new PhpDocExtractor();
+
+        //?DocBlockFactoryInterface $docBlockFactory = null,
+       // ?array $mutatorPrefixes = null,
+        //    ?array $accessorPrefixes = null,
+        //        ?array $arrayMutatorPrefixes = null
+        //$this->phpStanTypeHelper = new Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor\PhpStanTypeHelper();
+        $this->phpDocExtractor = new PhpDocExtractor();
+        $this->phpStanExtractor = new PhpStanExtractor();
+        $this->reflectionExtractor = new ReflectionExtractor();
+        $this->phpDocTypeHelper = new PhpDocTypeHelper();
+
+        $this->contextFactory = new ContextFactory();
+        $this->docBlockFactory = DocBlockFactory::createInstance();
+
+        $listExtractors = [$this->reflectionExtractor];
+        $typeExtractors = [$this->phpDocExtractor, $this->reflectionExtractor];
+        $descriptionExtractors = [$this->phpDocExtractor];
+        $accessExtractors = [$this->reflectionExtractor];
+        $propertyInitializableExtractors = [$this->reflectionExtractor];
+
+
+        $this->extractor = new PropertyInfoExtractor(
+            $listExtractors,
+            $typeExtractors,
+            $descriptionExtractors,
+            $accessExtractors,
+            $propertyInitializableExtractors
+        );
+
         $this->types = [
             "param" => "param",
             "urlParam" => "query",
@@ -36,19 +89,53 @@ class Parser {
     private function comments($method) {
         $method->getDocComment();
     }
-    public function parse($method) {
-        $tokens = new TokenIterator($this->lexer->tokenize($method->getDocComment()));
+    private function getTagsByType($docBlock, $type) {
+        $helper = $this->phpDocTypeHelper;
+        return array_map(function($param) use ($helper) {
+            $methods = gettype($param)==="object" ? get_class_methods($param) : [];
+            //$variables = gettype($param)==="object" ? get_class_vars($param) : null;
+            //var_dump(gettype($param));
+            //$variables = get_class_vars($param);
+            //echo "<br>";
+            //print_r(get_class_methods($param));
+            //echo "<br>";
+            //print_r(get_class_vars($param));
+            //echo "<br>";
+           //echo "<br>";
+            //bodyTemplate, param, tags, type
+            return [
+                'name' => in_array('getName', $methods) ? $param->getName() : null,
+                'type' => in_array('getType', $methods) ? $param->getType()->__toString() : null,
+                /*'types' => in_array('getType', $methods) ? array_map(function($t){
+                    return [
+                        'getClassName' => $t->getClassName(),
+                        'isCollection' => $t->isCollection(),
+                        'getCollectionKeyTypes'=>$t->getCollectionKeyTypes(),
+                        'getCollectionKeyTypes'=>$t->getCollectionValueTypes()
+                    ]; //get_class_methods($t);
+                    }, $helper->getTypes($param->getType())) : null,
+                //'tags' => $param->getTags(),*/
+                'description' => in_array('getDescription', $methods) ? $param->getDescription()->__toString() : null,
+                //'param' => $param->getParam(),
+                //'bodyTemplate' => $param->getBodyTemplate(),
+                'variableName' => in_array('getVariableName', $methods) ? $param->getVariableName() : null,
+                'text' => $param->__toString(),
+                'render' => $param->render(),
+                //'class_methods' => $methods,
+                //'class_methods' => $variables,
 
-        $node = $this->parser->parse($tokens);
+            ];
+        }, $docBlock->getTagsByName($type));
+    }
+    public function parse(&$class, &$method) {
+        //$tokens = new TokenIterator($this->lexer->tokenize($method->getDocComment()));
+
+        //$node = $this->parser->parse($tokens);
 
         //echo "<br><br><br>";
        // var_dump($node);
         //echo "<br><br><br>";
-        $comments = [
-            "text" => [],
-            "tags" => [],
-            //"tag_values" => $node->text
-        ];
+
        /* $comments = [
             "node" => $node,
             "tags" => $node->getTags(),
@@ -57,31 +144,88 @@ class Parser {
             "varTags" => $node->getTagsByName('@urlParam'),
             //"name" => $route->method->getName()
         ];*/
-        foreach($node->children as $child) {
+
+        //$t = $this->phpDocExtractor->getDocBlock($method, 'g');
+        /*
+         * phpdoc
+         * $this->phpDocExtractor->getTypes('Symfony\Component\PropertyInfo\Tests\Fixtures\InvalidDummy', 'foo')
+         * $this->phpDocExtractor->getShortDescription('Symfony\Component\PropertyInfo\Tests\Fixtures\InvalidDummy', 'foo')
+         * $this->phpDocExtractor->getLongDescription('Symfony\Component\PropertyInfo\Tests\Fixtures\InvalidDummy', 'foo')
+         *
+         * phpstan
+         * $this->phpStanExtractor->getTypes(PhpStanOmittedParamTagTypeDocBlock::class, 'omittedType')
+         */
+        //$t = $this->phpDocExtractor->getTypes($class, $method);
+        //echo "<br><br><br>phpDocExtractor<br><br>";
+        //var_dump($class);
+        $docBlock = $this->docBlockFactory->create($method, $this->contextFactory->createFromReflector($method));
+        $comments = [
+            //"class" => $class->getName(),
+            //"method" => $method->getName(),
+            "summary" => $docBlock->getSummary(),
+            "description" => $docBlock->getDescription()->__toString(),
+            "docblock_methods" => get_class_methods($docBlock), //getTags
+            //"template_start" => $docBlock->isTemplateStart(),
+            "tags" => [],
+            //"tag_values" => $node->text
+        ];
+
+        $propertyTypes = ["uses","param","urlParam","bodyParam","return","internal","throws"];
+        //$reflectionClass = new \ReflectionClass($class->getName());
+        //$reflectionMethod = $reflectionClass->getMethod($method->getName());
+        //$reflectionConstructor = $reflectionClass->getConstructor();
+
+        //var_dump($docBlock);
+        //$docBlock = $this->docBlockFactory->create($reflectionConstructor, $this->contextFactory->createFromReflector($reflectionConstructor));
+        //var_dump($docBlock->getTagsByName('param'));
+        //$tags = array_values(array_filter($docBlock->getTagsByName('param'), function ($tag) => $tag instanceof DocBlock\Tags\Param && $allowedParam === $tag->getVariableName()));
+
+        //return new DocBlock($docBlock->getSummary(), $docBlock->getDescription(), $tags, $docBlock->getContext(),
+        //    $docBlock->getLocation(), $docBlock->isTemplateStart(), $docBlock->isTemplateEnd());
+         //= [0]->getVariableName();
+        //echo "<br><br><br><br><br>";
+        foreach($propertyTypes as $type) {
+            $comments["tags"][$type] = $this->getTagsByType($docBlock, $type);
+        }
+
+        /*$comments["properties"] = $this->extractor->getProperties(get_class($class));
+        $comments["types"] = $this->extractor->getTypes($class, $method);
+        $comments["longDescription"] = $this->extractor->getLongDescription($class, $method);
+        $comments["shortDescription"] = $this->extractor->getShortDescription($class, $method);
+
+        $comments["phpDocExtractor"] = $this->phpDocExtractor->getTypes($class, "@param");
+        //$comments["phpStanExtractor"] = $this->phpStanExtractor->getTypes($class, $method);
+        $comments["reflectionExtractor"] = $this->reflectionExtractor->getTypes($class, $method);*/
+        //foreach($comments["phpDocExtractor"] as $type) {
+        //    var_dump($type);
+        //}
+        /*foreach($node->children as $child) {
             if($child->__toString()!=="" && !str_contains($child->__toString(),'@')) {
                 $comments["text"][] = $child->__toString();
             }
         }
         foreach($node->getTags() as $tag) {
             if(array_key_exists(str_replace('@','',$tag->name), $this->types)) {
-                /*$comments["tags"][] = [
-                    "resource" => $tag["name"],
-                    "resource" => $tag["name"],
-                    "resource" => $tag["name"],
-                    "resource" => $tag["name"],
-
-                ];*/
                 //$this->parseParamTagValue($this->lexer->tokenize($method->getDocComment($tag->text)));
-                if(property_exists($tag->value, "value")) {
-                    $this->parseParamTagValue(
-                        new TokenIterator($this->lexer->tokenize($tag->value->value))
+                $unknown = ["@apiParam","@bodyParam","@urlParam"];
+                if(array_key_exists($tag->name, $unknown) || property_exists($tag->value, "value")) {
+
+                    $param_tokens = $this->lexer->tokenize($tag->value->value);
+                    array_shift($param_tokens);
+
+                    var_dump($param_tokens);
+                    $tag = $this->parseParamTagValue(
+                        new TokenIterator($param_tokens)
                         //$this->lexer->tokenize($tag->value->value)
                     );
+
                 }
 
-                $comments["tags"][] = $tag;
+
             }
+            $comments["tags"][] = $tag;
         }
+        */
         return $comments;
     }
     private function parseOptionalDescription($tokens, $limitStartToken = false)
