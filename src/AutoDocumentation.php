@@ -216,63 +216,9 @@ class AutoDocumentation {
 
         return $response;
     }
-    private function getReflections() {
-        $interfaceList = [];
-        $this->log('Start parsing files.');
-        foreach ([app_path()] as $srcDir) {
-            $dir = new \RecursiveDirectoryIterator($srcDir);
-            $files = new \RecursiveIteratorIterator($dir);
-
-            foreach ($files as $file) {
-                if ($file->isDir()) {
-                    continue;
-                }
-                try {
-                    $interfaceList[] = new LocalFile($file->getPathname());
-                } catch (\Exception $e) {
-                    $this->log('Failed to load ' . $file->getPathname() . PHP_EOL);
-                }
-            }
-        }
-        echo "<br><br><br>";
-        var_dump($interfaceList);
-
-        $projectFactory = new ProjectFactory([
-            new Factory\Argument(new PrettyPrinter()),
-            new Factory\Class_(),
-            new Factory\Constant(new PrettyPrinter()),
-            new Factory\DocBlock(DocBlockFactory::createInstance()),
-            new Factory\File(NodesFactory::createInstance(),
-                [
-                    new ErrorHandlingMiddleware($this)
-                ]),
-            new Factory\Function_(),
-            new Factory\Interface_(),
-            new Factory\Method(),
-            new Factory\Property(new PrettyPrinter()),
-            new Factory\Trait_(),
-        ]);
-        $this->project = $projectFactory->create('MyProject', $interfaceList);
-        $this->log('Successfully parsed files.');
-
-        // load extensions
-        foreach ($this->extensionNames as $extensionName) {
-            $extension = new $extensionName($this->project, $this->extensionArguments[$extensionName]);
-            if (!is_subclass_of($extension, Extension::class)) {
-                $this->log('Failed to load extension ' . $extensionName . '.');
-            }
-            $this->extensions[] = $extension;
-            $this->log('Extension ' . $extensionName . ' loaded.');
-        }
-    }
-    private function log($message) {
-        Log::debug($message);
-    }
-
 
     public static function getRouteClassAndMethod($action)
     {
-
         if ($action['uses'] !== null ) {
             if (is_array($action['uses'])) {
                 return ;

@@ -109,7 +109,12 @@ class Parser {
     private function parseRequiredVariableName($tokens)
     {
         $parameterName = $tokens->currentTokenValue();
-        $tokens->consumeTokenType(Lexer::TOKEN_VARIABLE);
+        echo "<br><br>";
+        var_dump($tokens);
+        echo "<br><br>";
+        var_dump(Lexer::TOKEN_VARIABLE);
+        echo "<br><br>";
+        $tokens->consumeTokenType(Lexer::TOKEN_OTHER);
 
         return $parameterName;
     }
