@@ -3,29 +3,6 @@
 namespace SeacoastBank\AutoDocumentation;
 
 use Illuminate\Support\Facades\Route;
-//use SeacoastBank\AutoDocumentation\Lib\DocumentationConfig;
-//use SeacoastBank\AutoDocumentation\Lib\Utils;
-//use phpDocumentor\Reflection\DocBlockFactory;
-//use phpDocumentor\Reflection\File\LocalFile;
-//use phpDocumentor\Reflection\Php\Namespace_;
-//use phpDocumentor\Reflection\Php\NodesFactory;
-//use phpDocumentor\Reflection\Php\Project;
-//use phpDocumentor\Reflection\Php\ProjectFactory;
-//use phpDocumentor\Reflection\Php\Factory;
-//use SeacoastBank\AutoDocumentation\Lib\ClassFileBuilder;
-//use SeacoastBank\AutoDocumentation\Lib\InterfaceFileBuilder;
-//use SeacoastBank\PHPDocToRst\Builder\MainIndexBuilder;
-//use SeacoastBank\PHPDocToRst\Builder\NamespaceIndexBuilder;
-//use SeacoastBank\PHPDocToRst\Extension\Extension;
-//use SeacoastBank\PHPDocToRst\Builder\ClassFileBuilder;
-//use SeacoastBank\PHPDocToRst\Builder\InterfaceFileBuilder;
-//use phpDocumentor\Reflection\PrettyPrinter;
-//use PhpParser\PrettyPrinter\Standard as PrettyPrinter;
-use ReflectionClass;
-use ReflectionMethod;
-//use Illuminate\Support\Facades\Log;
-//use Jasny\PhpdocParser\PhpdocParser as DocParser;
-//use Jasny\PhpdocParser\Set\PhpDocumentor;
 use SeacoastBank\AutoDocumentation\Builder\Builder;
 use SeacoastBank\AutoDocumentation\Parser\Parser;
 
@@ -35,100 +12,36 @@ class AutoDocumentation {
     private $parser;
 
     function __construct($config = null) {
-
         $this->parser = new \SeacoastBank\AutoDocumentation\Parser\Parser();
         $this->builder = new \SeacoastBank\AutoDocumentation\Builder\Builder();
-
-
-        //$this->docBuilder = new ApiDocBuilder(app_path(), base_path().'/doctest');
-        /*$this->config = $config ?: new DocumentationConfig(config('apidocumentation'));
-        $this->strategies = [
-            'metadata' => [
-                \SeacoastBank\ApiDocumentation\Strategies\Metadata\GetFromDocBlocks::class,
-            ],
-            'urlParameters' => [
-                \SeacoastBank\ApiDocumentation\Strategies\UrlParameters\GetFromUrlParamTag::class,
-            ],
-            'queryParameters' => [
-                \SeacoastBank\ApiDocumentation\Strategies\QueryParameters\GetFromQueryParamTag::class,
-            ],
-            'headers' => [
-                \SeacoastBank\ApiDocumentation\Strategies\RequestHeaders\GetFromRouteRules::class,
-            ],
-            'bodyParameters' => [
-                \SeacoastBank\ApiDocumentation\Strategies\BodyParameters\GetFromBodyParamTag::class,
-            ],
-            'responses' => [
-                \SeacoastBank\ApiDocumentation\Strategies\Responses\UseTransformerTags::class,
-                \SeacoastBank\ApiDocumentation\Strategies\Responses\UseResponseTag::class,
-                \SeacoastBank\ApiDocumentation\Strategies\Responses\UseResponseFileTag::class,
-                \SeacoastBank\ApiDocumentation\Strategies\Responses\UseApiResourceTags::class,
-                \SeacoastBank\ApiDocumentation\Strategies\Responses\ResponseCalls::class,
-            ],
-        ];*/
     }
     public function fetchRoutes() {
         $response = [];
-        //$parser = new DocParser(PhpDocumentor::tags());
+        echo "<br><br><br>";
+
         foreach (Route::getRoutes() as $route) {
             if ($route->getActionName() !== 'Closure' && (strpos($route->uri, "api") !== false || $route->action["prefix"] === "api" || (array_key_exists("middleware", $route->action) && in_array("api", $route->action["middleware"])))) {
                 $controllerName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][0] : explode('@', $route->action['uses']))[0] : null;
                 $methodName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][1] : explode('@', $route->action['uses']))[1] : null;
 
-                $route->controller = new \ReflectionClass($controllerName);
-                $route->method = $route->controller->getMethod($methodName);
+                $class = new \ReflectionClass($controllerName);
+                $method = $class->getMethod($methodName);
 
+                $docData = $this->parser->parse($class, $method);
+                var_dump(get_class_methods($route));
+                echo "<br><br>";
 
-                //$reflectionClass = new \ReflectionClass($class->getName());
-                //        $reflectionMethod = $reflectionClass->getMethod($method->getName());
-                //$route->controller->docComments = $parser->parse($route->controller->getDocComment());
-                //$route->method->docComments = $parser->parse($route->method->getDocComment());
-
-                preg_match_all("/{[^}]*}/", $route->uri, $uri_parameters);
-                $route->uri_parameters = $uri_parameters;
-
-                //$route->comments = $this->parser->parse($route->method);
-
-               // $cloningTraverser = new NodeTraverser([new CloningVisitor()]);
-                //[$newPhpDocNode] = $cloningTraverser->traverse([$phpDocNode]);
-                //$newPhpDocNode->getParamTagValues()[0]->type = new IdentifierTypeNode('Ipsum');
-
-
-                
-                //$factory  = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
-                //$docblock = $factory->create($comment);
-
-                $class = $route->controller;
-                $method = $route->method;
                 $response[] = [
                     'name' =>  $route->getName(),
-                    'comments' => $this->parser->parse($route->controller, $route->method)
+                    'method' => $route->methods(),
+                    'class' => $class->getName(),
+                    'function' => $method->getName(),
+                    'uri' => $route->uri,
+                    'uri_params' => preg_match_all("/{[^}]*}/", $route->uri, $uri_parameters),
+                    'title' => $docData['summary'],
+                    'description' => $docData['description'],
+                    'parameters' => $docData['tags'],
                 ];
-
-                //$builder = new InterfaceFileBuilder($file, $interface, $this->extensions);
-                //$builder->getContent();
-                /*;
-            $projectFactory = new ProjectFactory([
-                new Factory\Argument(new PrettyPrinter()),
-                new Factory\Class_(),
-                new Factory\Constant(new PrettyPrinter()),
-                new Factory\DocBlock(DocBlockFactory::createInstance()),
-                new Factory\File(NodesFactory::createInstance(),
-                    [
-                        new ErrorHandlingMiddleware($this)
-                    ]),
-                new Factory\Function_(),
-                new Factory\Interface_(),
-                new Factory\Method(),
-                new Factory\Property(new PrettyPrinter()),
-                new Factory\Trait_(),
-            ]);
-            $this->project = $projectFactory->create('MyProject', $interfaceList);
-            $this->log('Successfully parsed files.');
-            $reflections = $this->getReflections();
-            // $file = new LocalFile('test.php');
-
-            var_dump( $this->extensions);*/
             }
         }
         return $response;
@@ -164,8 +77,8 @@ class AutoDocumentation {
                             'example_response' => '{ "hello" : "world" }',
                             'parameters' => [
                                 [
-                                    'resource' => 'param',
-                                    'name' => 'user_id',
+                                    'name' => 'param',
+                                    'variableName' => 'user_id',
                                     'description' => 'This is testing uri params.',
                                 ],
                                 [

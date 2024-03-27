@@ -10,7 +10,7 @@ class Builder {
     function __construct($type = 'api') {
         $this->type = $type;
         $this->defaults = [
-            'parameter' =>  ['resource'=>'param','type'=>'string','name'=>null,'description'=>null,'optional'=>false],
+            'parameter' =>  ['name'=>'param','type'=>'string','variableName'=>null,'description'=>null,'optional'=>false],
             'endpoint' => ['title'=>null, 'description'=>null, 'method'=>'GET', 'uri'=>'/', 'example_response'=>'{}', 'parameters'=>[]],
             'section' => ['title'=>null, 'description'=>null, 'content'=>[]],
             'page' =>  ['title'=>'API Reference', 'description'=>null, 'content'=>[]]
@@ -42,7 +42,7 @@ class Builder {
          */
         $meta = $this->setDefaults($meta, 'parameter');
         $optional = $meta['optional'] ? 'optional ' : '';
-        return ":{$meta['resource']} {$meta['type']} {$meta['name']}: {$optional}{$meta['description']} \r";
+        return ":{$meta['name']} {$meta['type']} {$meta['variableName']}: {$optional}{$meta['description']} \r";
     }
 
     public function endpoint($meta=[]) {
