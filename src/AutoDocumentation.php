@@ -59,6 +59,7 @@ class AutoDocumentation {
                     'title' => $doc['summary'],
                     'description' => $doc['description'],
                     'parameters' => $doc['parameters'],
+                    'response' => $doc['response'],
                 ];
             }
         }

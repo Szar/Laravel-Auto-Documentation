@@ -52,10 +52,14 @@ class Parser {
             "summary" => $docBlock->getSummary(),
             "description" => $docBlock->getDescription()->__toString(),
             "parameters" => [],
+            "response" => ""
         ];
         foreach($this->http_domain_params as $type => $name) {
             foreach($this->getTagsByType($docBlock, $type) as $param) {
                 $data["parameters"][] = $param;
+                if($name=="resjson"||$name=="resjson") {
+                    $data["response"] = $param['text'];
+                }
             }
         }
         return $data;

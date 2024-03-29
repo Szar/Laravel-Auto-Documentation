@@ -52,7 +52,7 @@ class Builder {
 
     .. sourcecode:: js
 
-        {$meta['example_response']}
+        {$meta['response']}
 
     {$meta['parameters']}
 
