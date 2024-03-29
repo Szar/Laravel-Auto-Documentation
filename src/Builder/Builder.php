@@ -15,6 +15,7 @@ class Builder {
             'section' => ['title'=>null, 'description'=>null, 'content'=>[]],
             'page' =>  ['title'=>'API Reference', 'description'=>null, 'content'=>[]]
         ];
+        $this->paramTypes = ['param','query','form','reqjson','reqheader','status'];
     }
 
     private function setDefaults($data, $key) {
@@ -43,7 +44,7 @@ class Builder {
         $meta = $this->setDefaults($meta, 'parameter');
         $optional = $meta['optional'] ? 'optional ' : '';
         $meta['type']=$meta['type'].' ';
-        $meta['variableName']=$meta['variableName'].':';
+        $meta['variableName']=str_replace(' ', '',$meta['variableName']).':';
         return ":{$meta['name']} {$meta['type']}{$meta['variableName']} {$optional}{$meta['description']} \r";
     }
 
@@ -52,9 +53,9 @@ class Builder {
         $meta['header'] = $meta['title']!=='' ? implode('', array_map(function($l) { return '+'; }, str_split($meta['title']))) : '';
         //var_dump($meta);
         //echo "<br><br>";+
-        $meta['parameters'] = implode("\r    ", array_map(function($d) { return $this->parameter($d); }, $meta['parameters']));
+        $meta['parameters'] = implode("\r    ", array_map(function($d) { return in_array($d['name'], $this->paramTypes) ? $this->parameter($d) : false; }, $meta['parameters']));
         //var_dump($meta);
-        echo "<br><br>";
+        //echo "<br><br>";
         return <<<EOD
 
 {$meta['title']}

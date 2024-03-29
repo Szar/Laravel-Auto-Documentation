@@ -22,6 +22,7 @@ class Parser {
             "responseHeader" => "resheader",
             "status" => "status",
         ];
+        $this->custom_params = ["query","form"];
         $this->types = ["uses","param","urlParam","getParam","postParam","bodyParam","jsonParam","return","internal","throws"];
     }
     private function comments($method) {
@@ -31,11 +32,14 @@ class Parser {
         $helper = new PhpDocTypeHelper();
         return array_map(function($param) use ($helper) {
             $methods = gettype($param)==="object" ? get_class_methods($param) : false;
+            $name = in_array('getName', $methods) ? (array_key_exists($param->getName(), $this->http_domain_params) ?  $this->http_domain_params[$param->getName()] : $param->getName()) : null;
+            $parts = explode(' ',$param->__toString());
+            $type = in_array($name, $this->custom_params) ? $parts[0] : (in_array('getType', $methods) ? $param->getType()->__toString() : null);
             return [
-                'name' => in_array('getName', $methods) ? (array_key_exists($param->getName(), $this->http_domain_params) ?  $this->http_domain_params[$param->getName()] : $param->getName()) : null,
-                'type' => in_array('getType', $methods) ? $param->getType()->__toString() : null,
-                'description' => in_array('getDescription', $methods) ? $param->getDescription()->__toString() : null,
-                'variableName' => in_array('getVariableName', $methods) ? $param->getVariableName() : null,
+                'name' => $name,
+                'type' => explode('|',$type)[0],
+                'description' => in_array($name, $this->custom_params) ? explode( $parts[1], $param->getDescription()->__toString())[1] : (in_array('getDescription', $methods) ? $param->getDescription()->__toString() : null),
+                'variableName' => in_array($name, $this->custom_params) ? $parts[1] : (in_array('getVariableName', $methods) ? $param->getVariableName() : null),
                 'text' => $param->__toString(),
                 'render' => $param->render(),
             ];
