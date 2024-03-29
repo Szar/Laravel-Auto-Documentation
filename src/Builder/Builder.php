@@ -42,16 +42,18 @@ class Builder {
          */
         $meta = $this->setDefaults($meta, 'parameter');
         $optional = $meta['optional'] ? 'optional ' : '';
-        return ":{$meta['name']} {$meta['type']} {$meta['variableName']}: {$optional}{$meta['description']} \r";
+        $meta['type']=$meta['type'].' ';
+        $meta['variableName']=$meta['variableName'].':';
+        return ":{$meta['name']} {$meta['type']}{$meta['variableName']} {$optional}{$meta['description']} \r";
     }
 
     public function endpoint($meta=[]) {
         $meta = $this->setDefaults($meta, 'endpoint');
         $meta['header'] = $meta['title']!=='' ? implode('', array_map(function($l) { return '+'; }, str_split($meta['title']))) : '';
-        var_dump($meta);
-        echo "<br><br>";
+        //var_dump($meta);
+        //echo "<br><br>";+
         $meta['parameters'] = implode("\r    ", array_map(function($d) { return $this->parameter($d); }, $meta['parameters']));
-        var_dump($meta);
+        //var_dump($meta);
         echo "<br><br>";
         return <<<EOD
 
