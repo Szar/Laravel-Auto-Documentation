@@ -54,7 +54,7 @@ class AutoDocumentation {
                     'function' => $method->getName(),
                     'uri' => $route->uri,
                     'domain' => $groups[0],
-                    'prefix' => $groups[1],
+                    'prefix' => ucfirst($groups[1]),
                     'uri_params' => preg_match_all("/{[^}]*}/", $route->uri, $uri_parameters),
                     'title' => $doc['summary'],
                     'description' => $doc['description'],
