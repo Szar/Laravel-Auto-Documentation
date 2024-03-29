@@ -53,6 +53,9 @@ class Parser {
                 $data["parameters"][] = $param;
             }
         }
+        usort( $data["parameters"], function($a, $b) {
+            return $a["name"] <=> $b["name"];
+        });
         return $data;
     }
 
