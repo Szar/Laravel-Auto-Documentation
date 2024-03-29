@@ -48,7 +48,11 @@ class Builder {
     public function endpoint($meta=[]) {
         $meta = $this->setDefaults($meta, 'endpoint');
         $meta['header'] = $meta['title']!=='' ? implode('', array_map(function($l) { return '+'; }, str_split($meta['title']))) : '';
+        var_dump($meta);
+        echo "<br><br>";
         $meta['parameters'] = implode("\r    ", array_map(function($d) { return $this->parameter($d); }, $meta['parameters']));
+        var_dump($meta);
+        echo "<br><br>";
         return <<<EOD
 
 {$meta['title']}
