@@ -21,9 +21,11 @@ class Parser {
             "requestHeader" => "reqheader",
             "responseHeader" => "resheader",
             "status" => "status",
+            "internal" => "internal",
+            "throws" => "throws"
         ];
         $this->custom_params = ["query","form"];
-        $this->types = ["uses","param","urlParam","getParam","postParam","bodyParam","jsonParam","return","internal","throws"];
+        //$this->types = ["uses","param","urlParam","getParam","postParam","bodyParam","jsonParam","return","internal","throws"];
     }
     private function comments($method) {
         $method->getDocComment();
@@ -52,14 +54,11 @@ class Parser {
             "description" => $docBlock->getDescription()->__toString(),
             "parameters" => [],
         ];
-        foreach($this->types as $type) {
+        foreach($this->http_domain_params as $type => $name) {
             foreach($this->getTagsByType($docBlock, $type) as $param) {
                 $data["parameters"][] = $param;
             }
         }
-        usort( $data["parameters"], function($a, $b) {
-            return $a["name"] <=> $b["name"];
-        });
         return $data;
     }
 
