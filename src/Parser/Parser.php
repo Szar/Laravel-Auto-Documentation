@@ -25,7 +25,6 @@ class Parser {
             "throws" => "throws"
         ];
         $this->custom_params = ["query","form"];
-        //$this->types = ["uses","param","urlParam","getParam","postParam","bodyParam","jsonParam","return","internal","throws"];
     }
     private function comments($method) {
         $method->getDocComment();
