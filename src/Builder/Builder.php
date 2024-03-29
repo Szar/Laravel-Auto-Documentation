@@ -71,7 +71,7 @@ EOD;
     public function section($meta=[]) {
         $meta = $this->setDefaults($meta, 'section');
         $meta['header'] = $meta['title']!=='' ? implode('', array_map(function($l) { return '-'; }, str_split($meta['title']))) : '';
-        $meta['content'] = implode("\r", array_map(function($d) { return $this->endpoint($d); }, $meta['content']));
+        $meta['data'] = implode("\r", array_map(function($d) { return $this->endpoint($d); }, $meta['data']));
         return <<<EOD
 
 {$meta['title']}
@@ -79,14 +79,14 @@ EOD;
 
 {$meta['description']}
 
-{$meta['content']}
+{$meta['data']}
 
 EOD;
     }
     public function page($meta=[]) {
         $meta = $this->setDefaults($meta, 'page');
         $meta['header'] = implode('', array_map(function($l) { return '='; }, str_split($meta['title'])));
-        $meta['content'] = implode("\r", array_map(function($d) { return $this->section($d); }, $meta['content']));
+        $meta['data'] = implode("\r", array_map(function($d) { return $this->section($d); }, $meta['data']));
 
         return <<<EOD
 {$meta['title']}
@@ -94,7 +94,7 @@ EOD;
 
 {$meta['description']}
 
-{$meta['content']}
+{$meta['data']}
 EOD;
     }
 

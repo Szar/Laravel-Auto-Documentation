@@ -11,4 +11,6 @@ Route::prefix('auto-documentation')->group(function () {
    // Route::get('/', [Controller::class, 'home']);
    // Route::get('/laravel-package-example', 'AutoDocumentationController@index');
     Route::get('/generate', 'AutoDocumentationController@generate');
+    Route::get('/parse', 'AutoDocumentationController@parse');
+    Route::get('/preview', 'AutoDocumentationController@preview');
 });

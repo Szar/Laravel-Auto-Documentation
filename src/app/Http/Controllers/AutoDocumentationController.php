@@ -17,9 +17,14 @@ class AutoDocumentationController extends Controller
     }
     public function generate() {
         $autodoc = new AutoDocumentation();
-        //return response(json_encode($routes), 200)->header('Content-Type', 'application/json');
         return $autodoc->generate();
-        //return response(json_encode($data), 200)->header('Content-Type', 'application/json');
-        //return view('autodocumentation::index', compact('data'));
+    }
+    public function parse() {
+        $autodoc = new AutoDocumentation();
+        return $autodoc->parseRoutes();
+    }
+    public function preview() {
+        $autodoc = new AutoDocumentation();
+        return $autodoc->preview();
     }
 }

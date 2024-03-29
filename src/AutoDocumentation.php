@@ -12,39 +12,54 @@ class AutoDocumentation {
     private $parser;
 
     function __construct($config = null) {
-        $this->parser = new \SeacoastBank\AutoDocumentation\Parser\Parser();
-        $this->builder = new \SeacoastBank\AutoDocumentation\Builder\Builder();
+        $this->parser = new Parser();
+        $this->builder = new Builder();
     }
-    public function fetchRoutes() {
-        $response = [];
-        echo "<br><br><br>";
+    private function fetchRouteGroups() {
+        $routeCollection = Route::getRoutes();
+        $grouped_routes = array_filter($routeCollection->getRoutes(), function($route)  {
 
+            $action = $route->getAction();
+            if (isset($action['as'])) {
+                return true;
+            }
+            return false;
+        });
+    }
+    public function parseRoutes() {
+        $data = [];
         foreach (Route::getRoutes() as $route) {
             if ($route->getActionName() !== 'Closure' && (strpos($route->uri, "api") !== false || $route->action["prefix"] === "api" || (array_key_exists("middleware", $route->action) && in_array("api", $route->action["middleware"])))) {
                 $controllerName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][0] : explode('@', $route->action['uses']))[0] : null;
                 $methodName = !is_null($route->action['uses']) ? (is_array($route->action['uses']) ? $route->action['uses'][1] : explode('@', $route->action['uses']))[1] : null;
-
                 $class = new \ReflectionClass($controllerName);
                 $method = $class->getMethod($methodName);
+                $doc = $this->parser->parse($class, $method);
+                $groups = explode('/', $route->getPrefix());
 
-                $docData = $this->parser->parse($class, $method);
-                var_dump(get_class_methods($route));
-                echo "<br><br>";
+                if(!array_key_exists($groups[1], $data)) {
+                    $data[$groups[1]] = [
+                        'title' => $groups[1],
+                        'data' => []
+                    ];
+                }
 
-                $response[] = [
+                $data[$groups[1]]['data'][] = [
                     'name' =>  $route->getName(),
-                    'method' => $route->methods(),
+                    'method' => is_array($route->methods()) ? $route->methods()[0] : $route->methods(),
                     'class' => $class->getName(),
                     'function' => $method->getName(),
                     'uri' => $route->uri,
+                    'domain' => $groups[0],
+                    'prefix' => $groups[1],
                     'uri_params' => preg_match_all("/{[^}]*}/", $route->uri, $uri_parameters),
-                    'title' => $docData['summary'],
-                    'description' => $docData['description'],
-                    'parameters' => $docData['tags'],
+                    'title' => $doc['summary'],
+                    'description' => $doc['description'],
+                    'parameters' => $doc['parameters'],
                 ];
             }
         }
-        return $response;
+        return $data;
 
     }
 
@@ -53,7 +68,7 @@ class AutoDocumentation {
         $data = [
             'title' => 'API Reference Test Page',
             'description' => 'This is a test page!',
-            'content' => [
+            'data' => [
                 [
                     'title' => 'Empty Test Section',
                     'description' => 'This is a test section!',
@@ -61,7 +76,7 @@ class AutoDocumentation {
                 [
                     'title' => 'Reference Test Section',
                     'description' => 'This is a test section!',
-                    'content' => [
+                    'data' => [
                         [
                             'title' => 'Empty Endpoint',
                             'description' => 'This is a test endpoint!',
@@ -126,14 +141,28 @@ class AutoDocumentation {
 
 
         /*$response = $this->builder->build($data);
-        $doc_file = fopen(base_path()."/docs/api.rst", "w") or die("Unable to open file!");
-        fwrite($doc_file, $response);
-        fclose($doc_file);*/
+        */
 
-
-        $response = $this->fetchRoutes();
-
+        $data = [
+            'title' => 'API Reference Test Page',
+            'description' => 'This is a test page!',
+            'data' => $this->parseRoutes()
+        ];
+        $response = $this->builder->build($data);
+        $this->write($response, "/docs/api.rst");
         return $response;
+    }
+    public function preview() {
+        $parser = new \Gregwar\RST\Parser;
+        $rst = $this->generate();
+        return $parser->parse($rst);
+    }
+
+    private function write($data, $path) {
+        $f = fopen(base_path().$path, "w") or die("Unable to open file!");
+        fwrite($f, $data);
+        fclose($f);
+        return true;
     }
 
     public static function getRouteClassAndMethod($action)
