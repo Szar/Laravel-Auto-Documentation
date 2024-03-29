@@ -15,7 +15,6 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "phpstan/phpdoc-parser": "^1.27",
         "symfony/symfony": "^6.4.5",
         "phpdocumentor/reflection-docblock": "^5.2",
         "gregwar/rst": "*"

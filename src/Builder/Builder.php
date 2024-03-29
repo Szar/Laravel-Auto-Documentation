@@ -28,19 +28,6 @@ class Builder {
     }
 
     public function parameter($meta=[]) {
-        /*
-         * Resource Types
-         * param (parameter, arg, argument) - url param
-         * query (queryparameter, queryparam, qparam) - get param?
-         * form (formparameter, formparam, fparam) - content body of form data (application/x-www-form-urlencoded or multipart/form-data)
-         * json (jsonparameter, jsonparam) - content body of application/json
-         * reqjsonobj, reqjson - SINGLE json field
-         * resjsonobj, resjson - returned json single field
-         * reqjsonarr, <jsonarr resjsonarr, >jsonarr
-         * requestheader, reqheader, >header - request header field
-         * responseheader, resheader, <header - response header field
-         * statuscode, status, code
-         */
         $meta = $this->setDefaults($meta, 'parameter');
         $optional = $meta['optional'] ? 'optional ' : '';
         $meta['type']=$meta['type'].' ';
@@ -51,11 +38,7 @@ class Builder {
     public function endpoint($meta=[]) {
         $meta = $this->setDefaults($meta, 'endpoint');
         $meta['header'] = $meta['title']!=='' ? implode('', array_map(function($l) { return '+'; }, str_split($meta['title']))) : '';
-        //var_dump($meta);
-        //echo "<br><br>";+
         $meta['parameters'] = implode("\r    ", array_map(function($d) { return in_array($d['name'], $this->paramTypes) ? $this->parameter($d) : false; }, $meta['parameters']));
-        //var_dump($meta);
-        //echo "<br><br>";
         return <<<EOD
 
 {$meta['title']}
