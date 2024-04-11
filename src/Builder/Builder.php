@@ -31,14 +31,15 @@ class Builder {
         $meta = $this->setDefaults($meta, 'parameter');
         $optional = $meta['optional'] ? 'optional ' : '';
         $meta['type']=$meta['type'].' ';
-        $meta['variableName']=str_replace(' ', '',$meta['variableName']).':';
-        return ":{$meta['name']} {$meta['type']}{$meta['variableName']} {$optional}{$meta['description']} \r";
+        $meta['variableName']=str_replace('$','', str_replace(' ', '',$meta['variableName']).':');
+        return ":{$meta['name']} {$meta['type']}{$meta['variableName']} {$optional}{$meta['description']} ";
     }
 
     public function endpoint($meta=[]) {
         $meta = $this->setDefaults($meta, 'endpoint');
         $meta['header'] = $meta['title']!=='' ? implode('', array_map(function($l) { return '+'; }, str_split($meta['title']))) : '';
         $meta['parameters'] = implode("\r    ", array_map(function($d) { return in_array($d['name'], $this->paramTypes) ? $this->parameter($d) : false; }, $meta['parameters']));
+        $meta['response'] = $meta['response']=="" || $meta['response']=="null" || is_null($meta['response']) ? "{}" : $meta['response'];
         return <<<EOD
 
 {$meta['title']}
