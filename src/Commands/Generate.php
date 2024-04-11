@@ -7,7 +7,6 @@ use SeacoastBank\AutoDocumentation\AutoDocumentation;
 class Generate extends Command
 {
     protected $signature = 'docs:generate
-                            {--force : Force rewriting of existing routes}
     ';
     protected $description = 'Generates API documentation.';
 

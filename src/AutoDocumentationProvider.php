@@ -18,13 +18,6 @@ class AutoDocumentationProvider extends ServiceProvider
         {
             include __DIR__.'/../vendor/autoload.php';
         }
-        $this->app->router->group(['namespace' => 'SeacoastBank\AutoDocumentation\App\Http\Controllers'],
-            function(){
-                require __DIR__.'/routes/web.php';
-            }
-        );
-        //$this->publishes([ __DIR__.'/config' => config_path('vendor/seacoastbank/autodocumentation') ]);
-
         if ($this->app->runningInConsole()) {
             $this->commands([
                 Generate::class
